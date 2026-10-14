@@ -1,0 +1,235 @@
+{% extends '@MauticCore/Default/content.html.twig' %}
+
+{% block mauticContent %}asyntai{% endblock %}
+
+{% block headerTitle %}{{ 'mautic.asyntai.title'|trans }}{% endblock %}
+
+{% block content %}
+<div class="pa-md" id="asyntai-settings"
+     data-auth-url="{{ origin }}/wp-auth?platform=mautic"
+     data-status-url="{{ origin }}/connect-status.js">
+
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <p>
+                {{ 'mautic.asyntai.status'|trans }}:
+                {% if connected %}
+                    <strong class="text-success">{{ 'mautic.asyntai.status.connected'|trans }}</strong>
+                    {% if accountEmail is not empty %}
+                        <span class="text-muted">({{ accountEmail }})</span>
+                    {% endif %}
+                {% else %}
+                    <strong>{{ 'mautic.asyntai.status.not_connected'|trans }}</strong>
+                {% endif %}
+            </p>
+
+            <div id="asyntai-alert" class="alert" style="display:none;"></div>
+
+            {% if connected %}
+                <h4>{{ 'mautic.asyntai.connected.heading'|trans }}</h4>
+                <p>{{ 'mautic.asyntai.connected.help'|trans }}</p>
+                <form method="post" action="{{ path('mautic_asyntai_action', {'action': 'reset'}) }}" autocomplete="off"
+                      onsubmit="return window.confirm('{{ 'mautic.asyntai.connected.reset_confirm'|trans|e('js') }}');">
+                    <input type="hidden" name="_token" value="{{ csrfToken }}">
+                    <a class="btn btn-primary" href="{{ origin }}/dashboard/" target="_blank" rel="noopener">{{ 'mautic.asyntai.connected.panel'|trans }}</a>
+                    <button type="submit" class="btn btn-danger">{{ 'mautic.asyntai.connected.reset'|trans }}</button>
+                </form>
+            {% else %}
+                <h4>{{ 'mautic.asyntai.connect.heading'|trans }}</h4>
+                <p>{{ 'mautic.asyntai.connect.help'|trans }}</p>
+                <p>
+                    <button type="button" id="asyntai-connect-btn" class="btn btn-primary">{{ 'mautic.asyntai.connect.button'|trans }}</button>
+                </p>
+                <p class="text-muted">
+                    {{ 'mautic.asyntai.connect.fallback'|trans }}
+                    <a id="asyntai-fallback-link" href="{{ origin }}/wp-auth?platform=mautic" target="_blank" rel="noopener">{{ 'mautic.asyntai.connect.fallback_link'|trans }}</a>
+                </p>
+                <form id="asyntai-connect-form" method="post" action="{{ path('mautic_asyntai_action', {'action': 'connect'}) }}" autocomplete="off" style="display:none;">
+                    <input type="hidden" name="_token" value="{{ csrfToken }}">
+                    <input type="hidden" name="site_id" value="">
+                    <input type="hidden" name="script_url" value="">
+                    <input type="hidden" name="account_email" value="">
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3 class="panel-title">{{ 'mautic.asyntai.display.heading'|trans }}</h3></div>
+        <div class="panel-body">
+            {% if not published %}
+                <div class="alert alert-warning">{{ 'mautic.asyntai.display.off_note'|trans }}</div>
+            {% endif %}
+            <form method="post" action="{{ path('mautic_asyntai_action', {'action': 'display'}) }}" autocomplete="off">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <div class="checkbox">
+                    <label><input type="checkbox" name="published" value="1"{% if published %} checked{% endif %}> {{ 'mautic.asyntai.display.published'|trans }}</label>
+                </div>
+                <hr>
+                <div class="radio">
+                    <label><input type="radio" name="mode" value="all"{% if mode == 'all' %} checked{% endif %}> {{ 'mautic.asyntai.display.all'|trans }}</label>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="mode" value="token"{% if mode == 'token' %} checked{% endif %}> {{ 'mautic.asyntai.display.token'|trans({'%token%': token}) }}</label>
+                    <p class="text-muted small" style="margin-left:20px;">{{ 'mautic.asyntai.display.token_help'|trans }}</p>
+                </div>
+                <div class="radio">
+                    <label><input type="radio" name="mode" value="off"{% if mode == 'off' %} checked{% endif %}> {{ 'mautic.asyntai.display.off'|trans }}</label>
+                </div>
+                <button type="submit" class="btn btn-primary">{{ 'mautic.asyntai.save'|trans }}</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3 class="panel-title">{{ 'mautic.asyntai.import.heading'|trans }}</h3></div>
+        <div class="panel-body">
+            <p>{{ 'mautic.asyntai.import.help'|trans }}</p>
+            <form method="post" action="{{ path('mautic_asyntai_action', {'action': 'leads'}) }}" autocomplete="off">
+                <input type="hidden" name="_token" value="{{ csrfToken }}">
+                <div class="checkbox">
+                    <label><input type="checkbox" name="import_enabled" value="1"{% if importEnabled %} checked{% endif %}> {{ 'mautic.asyntai.import.enabled'|trans }}</label>
+                </div>
+                <div class="form-group">
+                    <label for="asyntai-api-key">{{ 'mautic.asyntai.import.api_key'|trans }}</label>
+                    <input type="password" class="form-control" id="asyntai-api-key" name="api_key" value="" autocomplete="new-password"
+                           placeholder="{{ hasApiKey ? '••••••••••••' : '' }}">
+                    <p class="help-block">
+                        {% if hasApiKey %}{{ 'mautic.asyntai.import.api_key_saved'|trans }} {% endif %}
+                        {{ 'mautic.asyntai.import.api_key_help'|trans }}
+                        <a href="{{ origin }}/settings/api/" target="_blank" rel="noopener">{{ 'mautic.asyntai.import.api_key_link'|trans }}</a>
+                    </p>
+                    {% if hasApiKey %}
+                        <div class="checkbox">
+                            <label><input type="checkbox" name="remove_api_key" value="1"> {{ 'mautic.asyntai.import.remove_api_key'|trans }}</label>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="asyntai-tag">{{ 'mautic.asyntai.import.tag'|trans }}</label>
+                    <input type="text" class="form-control" id="asyntai-tag" name="tag" value="{{ tag }}" maxlength="100">
+                </div>
+                <button type="submit" class="btn btn-primary">{{ 'mautic.asyntai.save'|trans }}</button>
+            </form>
+            <hr>
+            <p class="text-muted">
+                {% if lastImport is not empty %}
+                    {{ 'mautic.asyntai.import.last'|trans({
+                        '%date%': lastImport|date('Y-m-d H:i'),
+                        '%created%': lastResult.created|default(0),
+                        '%updated%': lastResult.updated|default(0),
+                        '%failed%': lastResult.failed|default(0)
+                    }) }}
+                {% else %}
+                    {{ 'mautic.asyntai.import.never'|trans }}
+                {% endif %}
+            </p>
+            {% if importEnabled and hasApiKey %}
+                <form method="post" action="{{ path('mautic_asyntai_action', {'action': 'leadsnow'}) }}" autocomplete="off">
+                    <input type="hidden" name="_token" value="{{ csrfToken }}">
+                    <button type="submit" class="btn btn-secondary">{{ 'mautic.asyntai.import.now'|trans }}</button>
+                </form>
+            {% endif %}
+            <p class="text-muted" style="margin-top:12px;">{{ 'mautic.asyntai.import.cron'|trans }}</p>
+            <pre>php bin/console mautic:asyntai:import-leads</pre>
+        </div>
+    </div>
+</div>
+
+{% if not connected %}
+<script>
+(function () {
+  'use strict';
+  var root = document.getElementById('asyntai-settings');
+  var btn = document.getElementById('asyntai-connect-btn');
+  if (!root || !btn || btn.getAttribute('data-ready')) {
+    return;
+  }
+  btn.setAttribute('data-ready', '1');
+  var AUTH_URL = root.getAttribute('data-auth-url');
+  var STATUS_URL = root.getAttribute('data-status-url');
+  var MSG_SAVING = '{{ 'mautic.asyntai.connect.saving'|trans|e('js') }}';
+  var MSG_BLOCKED = '{{ 'mautic.asyntai.connect.blocked'|trans|e('js') }}';
+
+  function showAlert(message, ok) {
+    var el = document.getElementById('asyntai-alert');
+    if (!el) return;
+    el.className = 'alert ' + (ok ? 'alert-success' : 'alert-danger');
+    el.style.display = 'block';
+    el.textContent = message;
+  }
+
+  function newState() {
+    var bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    var hex = '';
+    for (var i = 0; i < bytes.length; i++) {
+      hex += ('0' + bytes[i].toString(16)).slice(-2);
+    }
+    return 'mautic_' + hex;
+  }
+
+  var state = newState();
+  function connectUrl() {
+    return AUTH_URL + '&state=' + encodeURIComponent(state);
+  }
+
+  function save(data) {
+    var form = document.getElementById('asyntai-connect-form');
+    if (!form) return;
+    showAlert(MSG_SAVING, true);
+    form.elements.site_id.value = data.site_id || '';
+    form.elements.script_url.value = data.script_url || '';
+    form.elements.account_email.value = data.account_email || '';
+    form.submit();
+  }
+
+  var polling = false;
+  function poll() {
+    if (polling) return;
+    polling = true;
+    var attempts = 0;
+    function check() {
+      if (!document.body.contains(root) || attempts++ > 300) { polling = false; return; }
+      var cb = 'asyntai_cb_' + Date.now();
+      var script = document.createElement('script');
+      window[cb] = function (data) {
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+        if (data && data.site_id) {
+          polling = false;
+          save(data);
+          return;
+        }
+        setTimeout(check, 1000);
+      };
+      script.onerror = function () {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        setTimeout(check, 2000);
+      };
+      script.src = STATUS_URL + '?state=' + encodeURIComponent(state) + '&cb=' + cb;
+      document.head.appendChild(script);
+    }
+    setTimeout(check, 800);
+  }
+
+  var link = document.getElementById('asyntai-fallback-link');
+  if (link) {
+    link.href = connectUrl();
+    link.addEventListener('click', function () { poll(); });
+  }
+  btn.addEventListener('click', function () {
+    var w = 800, h = 720;
+    var y = window.top.outerHeight / 2 + window.top.screenY - (h / 2);
+    var x = window.top.outerWidth / 2 + window.top.screenX - (w / 2);
+    var pop = window.open(connectUrl(), 'asyntai_connect',
+      'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=' + w + ',height=' + h + ',top=' + y + ',left=' + x);
+    if (!pop || pop.closed || typeof pop.closed === 'undefined') {
+      showAlert(MSG_BLOCKED, false);
+    }
+    poll();
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{
+    "name": "asyntai/mautic-ai-chatbot",
+    "description": "Asyntai AI Chatbot for Mautic: an AI chat assistant on your landing pages that answers visitors around the clock and turns the email addresses and phone numbers they share into Mautic contacts.",
+    "type": "mautic-plugin",
+    "license": "MIT",
+    "keywords": [
+        "mautic",
+        "plugin",
+        "integration",
+        "ai",
+        "chatbot",
+        "live chat",
+        "lead capture",
+        "landing pages"
+    ],
+    "homepage": "https://asyntai.com/documentation/integrations/mautic/",
+    "authors": [
+        {
+            "name": "Asyntai",
+            "email": "hello@asyntai.com",
+            "homepage": "https://asyntai.com"
+        }
+    ],
+    "support": {
+        "email": "hello@asyntai.com",
+        "docs": "https://asyntai.com/documentation/integrations/mautic/",
+        "issues": "https://github.com/asyntai/mautic-ai-chatbot/issues",
+        "source": "https://github.com/asyntai/mautic-ai-chatbot"
+    },
+    "extra": {
+        "install-directory-name": "AsyntaiBundle"
+    },
+    "require": {
+        "php": ">=8.1",
+        "mautic/core-lib": "^6.0 || ^7.0"
+    }
+}
